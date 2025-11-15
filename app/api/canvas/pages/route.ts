@@ -6,16 +6,16 @@ import { readParams } from "@/lib/query";
  * handles GET requests for Canvas pages
  * 
  * @param {Request} req - The incoming HTTP request object
- *  Expecte query parameters:
+ *  Expected query parameters:
  *    - courseId: The Canvas course ID (required)
  *    - token: The Canvas API token (required)
  *    - moduleId: The Canvas module ID (optional, for listing)
  *    - pageId: The Canvas page ID (optional)
- *    - moduleItemId: The Canvsas module item ID (optional, for context)
+ *    - moduleItemId: The Canvas module item ID (optional, for context)
  * @returns {Promise<NextResponse>} JSON response containing:
  *   - { page } for a single page
  *   - { pages } for multiple pages
- *   - { error } with an HTTP error code is something fails
+ *   - { error } with an HTTP error code if something fails
  */
 export async function GET(req: Request) {
   try {
@@ -31,11 +31,11 @@ export async function GET(req: Request) {
 
     // Fetch a specific page 
     if(pageId) {
-      const page = await canvasClient.getpages(courseId, pageId, token);
+      const page = await canvasClient.getPages(courseId, pageId, token);
       
         if(!page) {
           return NextResponse.json(
-          { error: "page with ID ${pageId} not found." },
+          { error: "Page with ID ${pageId} not found." },
           { status: 404 }
         );
       }
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
     }
 
     // otherwise fetch all course pages
-    const pages = await canvasClient.getpages(courseId, token);
+    const pages = await canvasClient.getPages(courseId, token);
 
     if(!pages || pages.length === 0) {
       return NextResponse.json(

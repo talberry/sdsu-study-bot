@@ -6,16 +6,16 @@ import { readParams } from "@/lib/query";
  * handles GET requests for Canvas quizzes
  * 
  * @param {Request} req - The incoming HTTP request object
- *  Expecte query parameters:
+ *  Expected query parameters:
  *    - courseId: The Canvas course ID (required)
  *    - token: The Canvas API token (required)
  *    - moduleId: The Canvas module ID (optional, for listing)
  *    - quizId: The Canvas quiz ID (optional)
- *    - moduleItemId: The Canvsas module item ID (optional, for context)
+ *    - moduleItemId: The Canvas module item ID (optional, for context)
  * @returns {Promise<NextResponse>} JSON response containing:
  *   - { quiz } for a single quiz
  *   - { quizzes } for multiple quizzes
- *   - { error } with an HTTP error code is something fails
+ *   - { error } with an HTTP error code if something fails
  */
 export async function GET(req: Request) {
   try {
@@ -31,11 +31,11 @@ export async function GET(req: Request) {
 
     // Fetch a specific quiz 
     if(quizId) {
-      const quiz = await canvasClient.getquizzes(courseId, quizId, token);
+      const quiz = await canvasClient.getQuizzes(courseId, quizId, token);
       
         if(!quiz) {
           return NextResponse.json(
-          { error: "quiz with ID ${quizId} not found." },
+          { error: "Quiz with ID ${quizId} not found." },
           { status: 404 }
         );
       }
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
     }
 
     // otherwise fetch all course quizzes
-    const quizzes = await canvasClient.getquizzes(courseId, token);
+    const quizzes = await canvasClient.getQuizzes(courseId, token);
 
     if(!quizzes || quizzes.length === 0) {
       return NextResponse.json(

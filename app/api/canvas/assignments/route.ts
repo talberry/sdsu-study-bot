@@ -6,16 +6,16 @@ import { readParams } from "@/lib/query";
  * handles GET requests for Canvas assignments
  * 
  * @param {Request} req - The incoming HTTP request object
- *  Expecte query parameters:
+ *  Expected query parameters:
  *    - courseId: The Canvas course ID (required)
  *    - token: The Canvas API token (required)
  *    - moduleId: The Canvas module ID (optional, for listing)
  *    - assignmentId: The Canvas assignment ID (optional)
- *    - moduleItemId: The Canvsas module item ID (optional, for context)
+ *    - moduleItemId: The Canvas module item ID (optional, for context)
  * @returns {Promise<NextResponse>} JSON response containing:
  *   - { assignment } for a single assignment
  *   - { assignments } for multiple assignments
- *   - { error } with an HTTP error code is something fails
+ *   - { error } with an HTTP error code if something fails
  */
 export async function GET(req: Request) {
   try {
