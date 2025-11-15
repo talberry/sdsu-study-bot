@@ -1,65 +1,147 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState } from "react";
+import CanvasAuthModal from "./components/CanvasAuthModal";
+import ChatInterface from "./components/ChatInterface";
 
 export default function Home() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCanvasModalOpen, setIsCanvasModalOpen] = useState(false);
+
+  const features = [
+    {
+      icon: "📚",
+      title: "Smart Study Materials",
+      description:
+        "AI-powered summaries and study guides tailored to your courses",
+    },
+    {
+      icon: "🤖",
+      title: "AI Tutor Assistant",
+      description: "Get instant help with difficult concepts and homework",
+    },
+    {
+      icon: "📝",
+      title: "Quiz Generator",
+      description: "Auto-generated practice quizzes to test your knowledge",
+    },
+    {
+      icon: "⏰",
+      title: "Study Planning",
+      description: "Personalized study schedules and progress tracking",
+    },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-black text-white">
+      {/* Navigation */}
+      <nav className="fixed w-full top-0 z-50 bg-black border-b border-[#1f1f1f]">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="text-2xl text-white tracking-widest font-bold">
+            SDSU StudyBot
+          </div>
+
+          {/* Desktop Menu */}
+          <div className="hidden md:flex items-center gap-8">
+            <a
+              href="#features"
+              className="hover:text-[#8b2e2e] transition text-gray-400 text-sm font-semibold"
+            >
+              Features
+            </a>
+            <a
+              href="#about"
+              className="hover:text-[#8b2e2e] transition text-gray-400 text-sm font-semibold"
+            >
+              About
+            </a>
+            <a
+              href="#contact"
+              className="hover:text-[#8b2e2e] transition text-gray-400 text-sm font-semibold"
+            >
+              Contact
+            </a>
+            <button className="bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-6 py-2 border border-[#8b2e2e] text-white font-semibold transition-all duration-300">
+              Get Started
+            </button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden text-2xl"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            ☰
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-black border-t border-[#1f1f1f] p-4 space-y-4">
+            <a
+              href="#features"
+              className="block hover:text-[#8b2e2e] transition text-gray-400 text-sm font-semibold"
+            >
+              Features
+            </a>
+            <a
+              href="#about"
+              className="block hover:text-[#8b2e2e] transition text-gray-400 text-sm font-semibold"
+            >
+              About
+            </a>
+            <a
+              href="#contact"
+              className="block hover:text-[#8b2e2e] transition text-gray-400 text-sm font-semibold"
+            >
+              Contact
+            </a>
+            <button className="w-full bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-6 py-2 border border-[#8b2e2e] text-white font-semibold transition-all duration-300">
+              Get Started
+            </button>
+          </div>
+        )}
+      </nav>
+
+      {/* Hero Section */}
+      <section
+        className="pt-32 pb-20 px-6 relative"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 46, 46, 0.2), transparent)",
+        }}
+      >
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-6xl md:text-8xl mb-6 leading-tight text-white tracking-tighter font-bold">
+            Study<span className="text-[#8b2e2e] block">Bot</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto font-semibold">
+            Start by linking your Canvas auth token below
           </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <button
+              onClick={() => setIsCanvasModalOpen(true)}
+              className="bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-8 py-4 border border-[#8b2e2e] text-white font-semibold text-lg transition-all duration-300"
+            >
+              Link Canvas
+            </button>
+          </div>
+
+          {/* Chat Interface Box */}
+          <div className="relative w-full max-w-4xl mx-auto h-[500px] bg-[#080808] border border-[#1f1f1f] shadow-[0_4px_24px_rgba(0,0,0,0.8)] overflow-hidden">
+            <ChatInterface />
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </section>
+
+      <CanvasAuthModal
+        isOpen={isCanvasModalOpen}
+        onClose={() => {
+          setIsCanvasModalOpen(false);
+        }}
+      />
     </div>
   );
 }
