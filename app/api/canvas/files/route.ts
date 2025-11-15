@@ -53,7 +53,7 @@ export async function GET(req: Request) {
       const moduleItems = await canvasClient.getModuleItems(courseId, moduleId, token);
 
       const files = moduleItems.filter(
-        (Item: any) => Item.type === "file"
+        (Item: any) => Item.type === "File"
       );
 
       if (!files.length) {
