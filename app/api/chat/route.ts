@@ -49,10 +49,13 @@ export async function POST(request: NextRequest) {
             });
             controller.close();
           }).catch((error) => {
-            // Send error response
+            // Send error response with detailed error message
+            const errorMessage = error instanceof Error ? error.message : 'Failed to process chat';
+            console.error('Error in runWithTools:', error);
             sendSSE({
               type: 'error',
-              error: error instanceof Error ? error.message : 'Failed to process chat'
+              error: errorMessage,
+              details: error instanceof Error ? error.stack : undefined
             });
             controller.close();
           });
