@@ -10,6 +10,7 @@ import type { ModuleItem } from "@/types/canvas";
  *    - courseId: The Canvas course ID (required)
  *    - token: The Canvas API token (required)
  *    - moduleId: The Canvas module ID (optional, for listing)
+ *    - moduleItemId: The Canvas module item ID (optional)
  *    - page_slug: The Canvas page slug (optional)
  * @returns {Promise<NextResponse>} JSON response containing:
  *   - { page } for a single page
@@ -17,7 +18,7 @@ import type { ModuleItem } from "@/types/canvas";
  */
 export async function GET(req: Request) {
   try {
-    const { courseId, moduleId, page_slug, token } = readParams(req);  
+    const { courseId, moduleId, moduleItemId, page_slug, token } = readParams(req);  
     
     // required params validation
     if(!courseId || !token) {
@@ -29,45 +30,55 @@ export async function GET(req: Request) {
 
     // Create client instance with token
     const client = createCanvasClient(token);
-    let targetSlug = page_slug;
+    if (page_slug) {
+      const page = await client.getPages(courseId, page_slug);
+      return NextResponse.json({ page });
+    }
 
     // Resolve from moduleId
-    if (moduleId && !targetSlug) {
+    if (moduleId) {
       const items = await client.getModuleItems(courseId, moduleId);
 
       const itemsArray = Array.isArray(items) ? items : [items];
-      const pageItem = itemsArray.find((item: ModuleItem) => item.type === "Page");
+      const pageItems = itemsArray
+        .filter((item: ModuleItem) => item.type === "Page");
 
-      
-      if (!pageItem || !pageItem.page_url) {
+      if (!pageItems || pageItems.length === 0) {
         return NextResponse.json(
           { error: `No page found in module ${moduleId}.` },
           { status: 404 }
         );
       }
 
-      targetSlug = pageItem.page_url;
+      if (moduleItemId) {
+        const item = pageItems.find(
+          (item: ModuleItem) => String (item.id) === String (moduleItemId)
+        );
+        if (!item || !item.page_url) {
+          return NextResponse.json(
+            { error: `Module item ${moduleItemId} is not a page or could not be found in module ${moduleId}.` },
+            { status: 404 }
+          );
+        }
+        const page = await client.getPages(courseId, item.page_url);
+        return NextResponse.json({ page });
+      }
+
+      return NextResponse.json({ pages: pageItems });
     }
 
-    if (!targetSlug) {
+    // get all pages if accessible
+    const pages = await client.getPages(courseId);
+
+    const pagesArray = Array.isArray(pages) ? pages : [pages];
+    if (!pagesArray || pagesArray.length === 0) {
       return NextResponse.json(
-        { error: "Missing required paramter: page_slug / moduleId" },
-        { status: 400 }
+        { message: "No pages found for this course or Pages are disabled." },
+        { status: 200 }
       );
     }
 
-    const page = await client.getPages(courseId, targetSlug);
-
-    if (!page) {
-      return NextResponse.json(
-        { error: `Page '${targetSlug}' not found for course ${courseId}.` },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ page });
-
-
+    return NextResponse.json({ pages: pagesArray });
   } catch(error: unknown) {
     console.error("Error fetching pages:", error);
     return NextResponse.json(
