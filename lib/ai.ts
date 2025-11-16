@@ -21,7 +21,7 @@ async function callConverse(messages: Message[], systemPrompt = SYSTEM_PROMPT) {
         messages,
         system: [{text: systemPrompt}],
         toolConfig: {
-            tools: toolSchemas as unknown as Tool[]
+            tools: toolSchemas.map(schema => ({ toolSpec: schema })) as Tool[]
         }
     };
 
