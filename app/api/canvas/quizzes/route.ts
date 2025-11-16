@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { canvasClient } from "@/lib/canvas"; 
-import { readParams } from "@/lib/query";    
+import { createCanvasClient, readParams } from "@/lib/canvas"; 
+import type { ModuleItem } from "@/types/canvas";    
 
 /**
  * handles GET requests for Canvas quizzes
@@ -29,19 +29,22 @@ export async function GET(req: Request) {
       );
     }
 
+    // Create client instance with token
+    const client = createCanvasClient(token);
+
     // Fetch a specific quiz 
     if(quizId) {
-      const quiz = await canvasClient.getQuizzes(courseId, quizId, token);
+      const quiz = await client.getQuizzes(courseId, quizId);
       
-        if(!quiz) {
-          return NextResponse.json(
-          { error: "Quiz with ID ${quizId} not found." },
+      if(!quiz) {
+        return NextResponse.json(
+          { error: `Quiz with ID ${quizId} not found.` },
           { status: 404 }
         );
       }
 
       // Attach module context if provided
-      if (moduleItemId) {
+      if (moduleItemId && typeof quiz === 'object' && !Array.isArray(quiz)) {
         quiz.moduleItemId = moduleItemId;
       }
 
@@ -50,15 +53,18 @@ export async function GET(req: Request) {
 
     // Fetch all quizzes in a specific module
     if (moduleId) {
-      const moduleItems = await canvasClient.getModuleItems(courseId, moduleId, token);
-
-      const quizzes = moduleItems.filter(
-        (Item: any) => Item.type === "Quiz"
+      const moduleItems = await client.getModuleItems(courseId, moduleId);
+      
+      // Ensure moduleItems is an array
+      const itemsArray = Array.isArray(moduleItems) ? moduleItems : [moduleItems];
+      
+      const quizzes = itemsArray.filter(
+        (item: ModuleItem) => item.type === "Quiz"
       );
 
       if (!quizzes.length) {
         return NextResponse.json(
-          { message: "No quizzes found in module ${moduleId}." },
+          { message: `No quizzes found in module ${moduleId}.` },
           { status: 200 }
         );
       }
@@ -67,20 +73,23 @@ export async function GET(req: Request) {
     }
 
     // otherwise fetch all course quizzes
-    const quizzes = await canvasClient.getQuizzes(courseId, token);
+    const quizzes = await client.getQuizzes(courseId);
 
-    if(!quizzes || quizzes.length === 0) {
+    // Ensure quizzes is an array
+    const quizzesArray = Array.isArray(quizzes) ? quizzes : [quizzes];
+    
+    if(!quizzesArray || quizzesArray.length === 0) {
       return NextResponse.json(
         { message: "No quizzes found for this course." },
         { status: 200 }
       );
     }
     
-    return NextResponse.json({ quizzes });
-  } catch(error: any) {
+    return NextResponse.json({ quizzes: quizzesArray });
+  } catch(error: unknown) {
     console.error("Error fetching quizzes:", error);
     return NextResponse.json(
-      { error: "Failed to fetch quizzes.", details: error.message ?? "Unknown error."},
+      { error: "Failed to fetch quizzes.", details: error instanceof Error ? error.message : "Unknown error."},
       { status: 500 }
     );
   }

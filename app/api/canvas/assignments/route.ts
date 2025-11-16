@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { canvasClient } from "@/lib/canvas"; 
-import { readParams } from "@/lib/query";    
+import { createCanvasClient } from "@/lib/canvas"; 
+import { readParams } from "@/lib/canvas";
+import type { ModuleItem } from "@/types/canvas";    
 
 /**
  * handles GET requests for Canvas assignments
@@ -29,19 +30,22 @@ export async function GET(req: Request) {
       );
     }
 
+    // Create client instance with token
+    const client = createCanvasClient(token);
+
     // Fetch a specific assignment 
     if(assignmentId) {
-      const assignment = await canvasClient.getAssignments(courseId, assignmentId, token);
+      const assignment = await client.getAssignments(courseId, assignmentId);
       
-        if(!assignment) {
-          return NextResponse.json(
-          { error: "Assignment with ID ${assignmentId} not found." },
+      if(!assignment) {
+        return NextResponse.json(
+          { error: `Assignment with ID ${assignmentId} not found.` },
           { status: 404 }
         );
       }
 
       // Attach module context if provided
-      if (moduleItemId) {
+      if (moduleItemId && typeof assignment === 'object' && !Array.isArray(assignment)) {
         assignment.moduleItemId = moduleItemId;
       }
 
@@ -50,15 +54,18 @@ export async function GET(req: Request) {
 
     // Fetch all assignments in a specific module
     if (moduleId) {
-      const moduleItems = await canvasClient.getModuleItems(courseId, moduleId, token);
-
-      const assignments = moduleItems.filter(
-        (Item: any) => Item.type === "Assignment"
+      const moduleItems = await client.getModuleItems(courseId, moduleId);
+      
+      // Ensure moduleItems is an array
+      const itemsArray = Array.isArray(moduleItems) ? moduleItems : [moduleItems];
+      
+      const assignments = itemsArray.filter(
+        (item: ModuleItem) => item.type === "Assignment"
       );
 
       if (!assignments.length) {
         return NextResponse.json(
-          { message: "No assignments found in module ${moduleId}." },
+          { message: `No assignments found in module ${moduleId}.` },
           { status: 200 }
         );
       }
@@ -67,23 +74,24 @@ export async function GET(req: Request) {
     }
 
     // otherwise fetch all course assignments
-    const assignments = await canvasClient.getAssignments(courseId, token);
+    const assignments = await client.getAssignments(courseId);
+    
+    // Ensure assignments is an array
+    const assignmentsArray = Array.isArray(assignments) ? assignments : [assignments];
 
-    if(!assignments || assignments.length === 0) {
+    if(!assignmentsArray || assignmentsArray.length === 0) {
       return NextResponse.json(
         { message: "No assignments found for this course." },
         { status: 200 }
       );
     }
     
-    return NextResponse.json({ assignments });
-  } catch(error: any) {
+    return NextResponse.json({ assignments: assignmentsArray });
+  } catch(error: unknown) {
     console.error("Error fetching assignments:", error);
     return NextResponse.json(
-      { error: "Failed to fetch assignments.", details: error.message ?? "Unknown error."},
+      { error: "Failed to fetch assignments.", details: error instanceof Error ? error.message : "Unknown error."},
       { status: 500 }
     );
   }
-  
-  
 }
