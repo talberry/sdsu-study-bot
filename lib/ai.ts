@@ -189,15 +189,17 @@ async function executeTool(call: ToolCall, canvasToken: string | null): Promise<
             if (!course_id || !token)
                 throw new Error("Missing required inputs for study guide.");
 
-            // Call your existing Next.js backend route that builds the study pack
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/canvas/study-pack`,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ courseId: course_id, token }),
-                }
-            );
+            const base =
+                process.env.NEXT_PUBLIC_BASE_URL ||
+                process.env.VERCEL_URL
+                ? `https://${process.env.VERCEL_URL}`
+                : "http://localhost:3000";
+
+            const res = await fetch(`${base}/api/canvas/study-pack`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ courseId: course_id, token }),
+            });
 
             if (!res.ok) {
                 const err = await res.text();
