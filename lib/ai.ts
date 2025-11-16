@@ -2,6 +2,7 @@ import { BedrockRuntimeClient, ConverseCommand, ConverseCommandInput, Message } 
 import { toolSchemas } from "./functions";
 import { Tool } from "@aws-sdk/client-bedrock-runtime";
 import { ContentBlock } from "@aws-sdk/client-bedrock-runtime";
+import { SYSTEM_PROMPT } from './system_prompt';
 
 
 const client = new BedrockRuntimeClient({
@@ -12,10 +13,11 @@ const client = new BedrockRuntimeClient({
   }
 });
 
-async function callConverse(messages: Message[]) {
+async function callConverse(messages: Message[], systemPrompt = SYSTEM_PROMPT) {
     const input: ConverseCommandInput = {
         modelId: process.env.BEDROCK_MODEL_ID,
         messages,
+        system: [{text: systemPrompt}],
         toolConfig: {
             tools: toolSchemas as unknown as Tool[]
         }
@@ -102,6 +104,7 @@ async function executeTool(call: ToolCall): Promise<Record<string, unknown>> {
 type ToolUpdateCallback = (update: { step: number; name: string; status: 'started' | 'completed'; input?: Record<string, unknown>; output?: Record<string, unknown> }) => void;
 
 export async function runWithTools(userText: string, onToolUpdate?: ToolUpdateCallback) {
+    const systemPrompt = "";
     const conversation: Message[] = [
         {
             role: "user",
@@ -115,7 +118,7 @@ export async function runWithTools(userText: string, onToolUpdate?: ToolUpdateCa
     const toolTrace: ToolTraceEntry[] = [];
 
     for (let step = 0; step < safetySteps; step++) {
-        const response = await callConverse(conversation);
+        const response = await callConverse(conversation, systemPrompt);
         const stopReason = response.stopReason;
         const assistantMessage = response.output?.message;
 
