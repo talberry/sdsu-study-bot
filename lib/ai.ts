@@ -32,6 +32,13 @@ type ToolCall = {
     input: Record<string, unknown>
 }
 
+type ToolTraceEntry = {
+    step: number,
+    name: string,
+    input: Record<string, unknown>
+    output: Record<string, unknown>
+}
+
 function extractToolCallsFromMessage(message: Message): ToolCall[] {
     const toolCalls: ToolCall[] = [];
 
@@ -103,6 +110,7 @@ export async function runWithTools(userText: string) {
     ];
 
     const safetySteps = 5;
+    const toolTrace: ToolTraceEntry[] = [];
 
     for (let step = 0; step < safetySteps; step++) {
         const response = await callConverse(conversation);
@@ -120,6 +128,13 @@ export async function runWithTools(userText: string) {
 
             for (const call of toolCalls) {
                 const result = await executeTool(call);
+
+                toolTrace.push({
+                    step,
+                    name: call.name,
+                    input: call.input,
+                    output: result
+                })
 
                 const toolResultMessage: Message = {
                     role: "user",
@@ -142,7 +157,7 @@ export async function runWithTools(userText: string) {
         }
         const textBlock = assistantMessage.content?.find((block) => "text" in block && block.text);
         const finalText = textBlock?.text ?? "";
-        return {message: assistantMessage, text: finalText};
+        return {message: assistantMessage, text: finalText, toolTrace};
     }
     throw new Error("passed safety step threshold --> possibly in infinite loop");
 }
