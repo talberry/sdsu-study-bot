@@ -32,7 +32,7 @@ export async function GET(req: Request) {
 
       if (!course) {
         return NextResponse.json(
-          { error: "Course with ID ${courseId} not found."},
+          { error: `Course with ID ${courseId} not found.`},
           { status: 404 }
         );
       }

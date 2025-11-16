@@ -33,7 +33,7 @@ export async function GET(req: Request) {
 
       if (!module) {
         return NextResponse.json(
-          { error: "Module with ID ${moduleId} not found."},
+          { error: `Module with ID ${moduleId} not found.`},
           { status: 404 }
         );
       }

@@ -30,7 +30,7 @@ export async function GET(req: Request) {
 
     // Fetch a specific page 
     if(pageId) {
-      const page = await canvasClient.getPages(courseId, pageId, token);
+      const page = await createCanvasClient.getPages(courseId, pageId);
       
         if(!page) {
           return NextResponse.json(
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
 
     // Fetch all pages in a specific module
     if (moduleId) {
-      const moduleItems = await canvasClient.getModuleItems(courseId, moduleId, token);
+      const moduleItems = await createCanvasClient.getModuleItems(courseId, moduleId);
 
       const pages = moduleItems.filter(
         (Item: any) => Item.type === "Page"
@@ -66,7 +66,7 @@ export async function GET(req: Request) {
     }
 
     // otherwise fetch all course pages
-    const pages = await canvasClient.getPages(courseId, token);
+    const pages = await createCanvasClient.getPages(courseId);
 
     if(!pages || pages.length === 0) {
       return NextResponse.json(
