@@ -10,6 +10,12 @@ interface Message {
   timestamp: Date;
 }
 
+interface ToolExecution {
+  step: number;
+  name: string;
+  status: "started" | "completed";
+}
+
 export default function ChatInterface() {
   const { token } = useCanvasTokenContext();
   const [messages, setMessages] = useState<Message[]>([
@@ -22,6 +28,7 @@ export default function ChatInterface() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [currentTools, setCurrentTools] = useState<ToolExecution[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -45,11 +52,12 @@ export default function ChatInterface() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userMessageText = inputValue;
     setInputValue("");
     setIsLoading(true);
+    setCurrentTools([]);
 
     try {
-      // TODO: Send to backend API
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -57,19 +65,68 @@ export default function ChatInterface() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          message: inputValue,
+          message: userMessageText,
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: data.text || "I'm not sure how to respond to that.",
-          sender: "bot",
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, botMessage]);
+      if (response.ok && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
+
+                if (data.type === "tool") {
+                  if (data.status === "started") {
+                    setCurrentTools((prev) => [
+                      ...prev,
+                      { step: data.step, name: data.name, status: "started" },
+                    ]);
+                  } else if (data.status === "completed") {
+                    setCurrentTools((prev) =>
+                      prev.map((tool) =>
+                        tool.step === data.step && tool.name === data.name
+                          ? { ...tool, status: "completed" }
+                          : tool
+                      )
+                    );
+                  }
+                } else if (data.type === "final") {
+                  const botMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    text: data.text || "I'm not sure how to respond to that.",
+                    sender: "bot",
+                    timestamp: new Date(),
+                  };
+                  setMessages((prev) => [...prev, botMessage]);
+                  setCurrentTools([]);
+                } else if (data.type === "error") {
+                  const errorMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    text: "Sorry, I encountered an error. Please try again.",
+                    sender: "bot",
+                    timestamp: new Date(),
+                  };
+                  setMessages((prev) => [...prev, errorMessage]);
+                  setCurrentTools([]);
+                }
+              } catch (e) {
+                console.error("Error parsing SSE data:", e);
+              }
+            }
+          }
+        }
       } else {
         // Fallback response
         const botMessage: Message = {
@@ -89,6 +146,7 @@ export default function ChatInterface() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
+      setCurrentTools([]);
     } finally {
       setIsLoading(false);
     }
@@ -99,6 +157,13 @@ export default function ChatInterface() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const formatToolName = (name: string): string => {
+    return name
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   return (
@@ -135,7 +200,33 @@ export default function ChatInterface() {
             </div>
           </div>
         ))}
-        {isLoading && (
+        {isLoading && currentTools.length > 0 && (
+          <div className="flex justify-start">
+            <div className="bg-[#141414] border border-[#1f1f1f] text-white px-4 py-3 rounded-lg max-w-md">
+              <div className="text-xs font-semibold text-gray-400 mb-2">
+                🔧 Running Tools
+              </div>
+              <div className="space-y-2">
+                {currentTools.map((tool, index) => (
+                  <div
+                    key={`${tool.step}-${tool.name}-${index}`}
+                    className="flex items-center space-x-2"
+                  >
+                    {tool.status === "started" ? (
+                      <div className="w-4 h-4 border-2 border-[#8b2e2e] border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                    )}
+                    <span className="text-sm">{formatToolName(tool.name)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        {isLoading && currentTools.length === 0 && (
           <div className="flex justify-start">
             <div className="bg-[#141414] border border-[#1f1f1f] text-white px-4 py-3 rounded-lg">
               <div className="flex space-x-2">
