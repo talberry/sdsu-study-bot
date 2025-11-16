@@ -102,14 +102,13 @@ async function executeTool(call: ToolCall): Promise<Record<string, unknown>> {
 type ToolUpdateCallback = (update: { step: number; name: string; status: 'started' | 'completed'; input?: Record<string, unknown>; output?: Record<string, unknown> }) => void;
 
 export async function runWithTools(userText: string, onToolUpdate?: ToolUpdateCallback) {
-    const conversation: Message[] = [
-        {
+    const conversation: Message[] = [{
             role: "user",
             content: [{
                 text: userText
             }]
-        }
-    ];
+        
+}];
 
     const safetySteps = 5;
     const toolTrace: ToolTraceEntry[] = [];
@@ -129,7 +128,6 @@ export async function runWithTools(userText: string, onToolUpdate?: ToolUpdateCa
             const toolCalls = extractToolCallsFromMessage(assistantMessage as Message);
 
             for (const call of toolCalls) {
-                // Notify that tool execution started
                 if (onToolUpdate) {
                     onToolUpdate({
                         step,
@@ -141,7 +139,6 @@ export async function runWithTools(userText: string, onToolUpdate?: ToolUpdateCa
 
                 const result = await executeTool(call);
 
-                // Notify that tool execution completed
                 if (onToolUpdate) {
                     onToolUpdate({
                         step,

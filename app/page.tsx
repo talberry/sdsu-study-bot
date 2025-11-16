@@ -37,7 +37,7 @@ export default function Home() {
       {/* Navigation */}
       <nav className="fixed w-full top-0 z-50 bg-black border-b border-[#1f1f1f]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-2xl text-white font-bold">SDSU StudyBot</div>
+          <div className="text-2xl text-white font-bold">Aztec Study AI</div>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
@@ -112,7 +112,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <h1 className="text-6xl md:text-8xl leading-tight text-white tracking-tighter font-bold">
             <span className="block">SDSU</span>
-            <span className="block text-white">Canvas Study Bot</span>
+            <span className="block text-white">Aztec Study AI</span>
           </h1>
 
           {/* Scroll hint */}
