@@ -220,8 +220,8 @@ export async function runWithTools(userText: string, canvasToken?: string | null
             content: [{
                 text: userText
             }]
-        }
-    ];
+        
+}];
 
     const safetySteps = 5;
     const toolTrace: ToolTraceEntry[] = [];
@@ -241,7 +241,6 @@ export async function runWithTools(userText: string, canvasToken?: string | null
             const toolCalls = extractToolCallsFromMessage(assistantMessage as Message);
 
             for (const call of toolCalls) {
-                // Notify that tool execution started
                 if (onToolUpdate) {
                     onToolUpdate({
                         step,
