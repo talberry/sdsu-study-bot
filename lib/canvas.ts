@@ -1,6 +1,6 @@
 import type { Course, Assignment, Module, ModuleItem, File, Quiz, Page } from '@/types/canvas';
 
-const BASE_URL = "https://canvas.instructure.com/api/v1";
+const BASE_URL = "https://sdsu.instructure.com/api/v1";
 
 interface CanvasConfig {
     apiToken: string;
@@ -37,15 +37,20 @@ export class CanvasClient {
     }
 
     async getCourses(courseId?: string): Promise<Course[] | Course> {
-        return this.request<Course[] | Course>(`/courses${courseId ? `/${courseId}` : ''}`);
+        if (courseId) {
+            return this.request<Course>(`/courses/${courseId}`);
+        }
+        const query = "?enrollment_state=active&state[]=available&per_page=20";
+        return this.request<Course[]>(`/courses${query}`); 
     }
 
     async getModules(courseId: string, moduleId?: string): Promise<Module[] | Module> {
-        return this.request<Module[] | Module>(`/courses/${courseId}/modules${moduleId ? `/${moduleId}` : ''}`);
+        return this.request<Module[] | Module>(`/courses/${courseId}/modules${moduleId ? `/${moduleId}` : ''}?per_page=30`);
     }
 
     async getAssignments(courseId: string, assignmentId?: string): Promise<Assignment[] | Assignment> {
-        return this.request<Assignment[] | Assignment>(`/courses/${courseId}/assignments${assignmentId ? `/${assignmentId}` : ''}`);
+        return this.request<Assignment[] | Assignment>(`/courses/${courseId}/assignments${assignmentId ? `/${assignmentId}` : ''}?per_page=100&sort=position
+`);
     }
 
     async getFiles(courseId?: string, fileId?: string): Promise<File[] | File> {
@@ -54,21 +59,21 @@ export class CanvasClient {
             return this.request<File>(`/files/${fileId}`);
         }
         if (courseId) {
-            return this.request<File[]>(`/courses/${courseId}/files`);
+            return this.request<File[]>(`/courses/${courseId}/files?per_page=80`);
         }
         throw new Error('Either courseId or fileId must be provided');
     }
 
     async getQuizzes(courseId: string, quizId?: string): Promise<Quiz[] | Quiz> {
-        return this.request<Quiz[] | Quiz>(`/courses/${courseId}/quizzes${quizId ? `/${quizId}` : ''}`);
+        return this.request<Quiz[] | Quiz>(`/courses/${courseId}/quizzes${quizId ? `/${quizId}` : ''}?per_page=50`);
     }
     
     async getPages(courseId: string, pageId?: string): Promise<Page[] | Page> {
-        return this.request<Page[] | Page>(`/courses/${courseId}/pages${pageId ? `/${pageId}` : ''}`);
+        return this.request<Page[] | Page>(`/courses/${courseId}/pages${pageId ? `/${pageId}` : ''}?per_page=30`);
     }
     
     async getModuleItems(courseId: string, moduleId: string): Promise<ModuleItem[] | ModuleItem> {
-        return this.request<ModuleItem[] | ModuleItem>(`/courses/${courseId}/modules/${moduleId}/items`);
+        return this.request<ModuleItem[] | ModuleItem>(`/courses/${courseId}/modules/${moduleId}/items?per_page=30`);
     }
 }
 
