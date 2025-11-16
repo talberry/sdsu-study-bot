@@ -1,5 +1,8 @@
 import { BedrockRuntimeClient, ConverseCommand, ConverseCommandInput, Message } from "@aws-sdk/client-bedrock-runtime";
 import { toolSchemas } from "./functions";
+import { Tool } from "@aws-sdk/client-bedrock-runtime";
+import { ContentBlock } from "@aws-sdk/client-bedrock-runtime";
+
 
 const client = new BedrockRuntimeClient({
   region: process.env.AWS_REGION,
@@ -14,7 +17,7 @@ async function callConverse(messages: Message[]) {
         modelId: process.env.BEDROCK_MODEL_ID,
         messages,
         toolConfig: {
-            tools: toolSchemas as any
+            tools: toolSchemas as unknown as Tool[]
         }
     };
 
@@ -26,29 +29,34 @@ async function callConverse(messages: Message[]) {
 type ToolCall = {
     toolUseId: string,
     name: string,
-    input: any
+    input: Record<string, unknown>
 }
 
 function extractToolCallsFromMessage(message: Message): ToolCall[] {
     const toolCalls: ToolCall[] = [];
 
     for (const block of message.content ?? []) {
-        if ((block as any).toolUse) {
-            const toolUse = (block as any).toolUse;
-            toolCalls.push({
-                toolUseId: toolUse.toolUseId,
-                name: toolUse.name,
-                input: toolUse.input
-            });
+        if ("toolUse" in block && block.toolUse) {
+            const toolUse = block.toolUse;
+            if (toolUse.toolUseId && toolUse.name && toolUse.input) {
+                toolCalls.push({
+                    toolUseId: toolUse.toolUseId,
+                    name: toolUse.name,
+                    input: toolUse.input as Record<string, unknown>
+                });
+            }
         }
     }
     return toolCalls;
 }
 
-async function executeTool(call: ToolCall): Promise<any> {
+async function executeTool(call: ToolCall): Promise<Record<string, unknown>> {
     const {name, input} = call;
 
     switch(name) {
+        default:
+        throw new Error(`Unknown tool ${name}`);
+
         case "get_courses": {
             // Canvas
             return {courses: []};
@@ -125,14 +133,14 @@ export async function runWithTools(userText: string) {
                                     },
                                 ],
                             },
-                        } as any
+                        } as ContentBlock
                     ],
                 };
                 conversation.push(toolResultMessage);
             }
             continue;
         }
-        const textBlock = assistantMessage.content?.find((block: any) => block.text);
+        const textBlock = assistantMessage.content?.find((block: ContentBlock) => block.text);
         const finalText = textBlock?.text ?? "";
         return {message: assistantMessage, text: finalText};
     }
