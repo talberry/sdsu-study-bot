@@ -3,7 +3,7 @@ import { toolSchemas } from "./functions";
 import { Tool } from "@aws-sdk/client-bedrock-runtime";
 import { ContentBlock } from "@aws-sdk/client-bedrock-runtime";
 import { createCanvasClient } from "./canvas";
-import type { Course, Assignment, Module, Page } from "@/types/canvas";
+import type { Assignment, Page } from "@/types/canvas";
 
 
 const client = new BedrockRuntimeClient({
@@ -32,6 +32,13 @@ type ToolCall = {
     toolUseId: string,
     name: string,
     input: Record<string, unknown>
+}
+
+type ToolTraceEntry = {
+    step: number,
+    name: string,
+    input: Record<string, unknown>
+    output: Record<string, unknown>
 }
 
 function extractToolCallsFromMessage(message: Message): ToolCall[] {
@@ -194,7 +201,9 @@ async function executeTool(call: ToolCall, canvasToken: string | null): Promise<
     }
 }
 
-export async function runWithTools(userText: string, canvasToken?: string | null) {
+type ToolUpdateCallback = (update: { step: number; name: string; status: 'started' | 'completed'; input?: Record<string, unknown>; output?: Record<string, unknown> }) => void;
+
+export async function runWithTools(userText: string, canvasToken?: string | null, onToolUpdate?: ToolUpdateCallback) {
     const conversation: Message[] = [
         {
             role: "user",
@@ -205,6 +214,7 @@ export async function runWithTools(userText: string, canvasToken?: string | null
     ];
 
     const safetySteps = 5;
+    const toolTrace: ToolTraceEntry[] = [];
 
     for (let step = 0; step < safetySteps; step++) {
         const response = await callConverse(conversation);
@@ -221,8 +231,37 @@ export async function runWithTools(userText: string, canvasToken?: string | null
             const toolCalls = extractToolCallsFromMessage(assistantMessage as Message);
 
             for (const call of toolCalls) {
+                // Notify that tool execution started
+                if (onToolUpdate) {
+                    onToolUpdate({
+                        step,
+                        name: call.name,
+                        status: 'started',
+                        input: call.input
+                    });
+                }
+
                 try {
                     const result = await executeTool(call, canvasToken || null);
+
+                    // Notify that tool execution completed
+                    if (onToolUpdate) {
+                        onToolUpdate({
+                            step,
+                            name: call.name,
+                            status: 'completed',
+                            input: call.input,
+                            output: result
+                        });
+                    }
+
+                    toolTrace.push({
+                        step,
+                        name: call.name,
+                        input: call.input,
+                        output: result
+                    });
+
                     const toolResultMessage: Message = {
                         role: "user",
                         content: [
@@ -242,6 +281,25 @@ export async function runWithTools(userText: string, canvasToken?: string | null
                 } catch (error) {
                     // Handle tool execution errors - communicate error through content
                     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+                    
+                    // Notify that tool execution failed
+                    if (onToolUpdate) {
+                        onToolUpdate({
+                            step,
+                            name: call.name,
+                            status: 'completed',
+                            input: call.input,
+                            output: { error: errorMessage }
+                        });
+                    }
+
+                    toolTrace.push({
+                        step,
+                        name: call.name,
+                        input: call.input,
+                        output: { error: errorMessage }
+                    });
+
                     const toolResultMessage: Message = {
                         role: "user",
                         content: [
@@ -264,7 +322,7 @@ export async function runWithTools(userText: string, canvasToken?: string | null
         }
         const textBlock = assistantMessage.content?.find((block) => "text" in block && block.text);
         const finalText = textBlock?.text ?? "";
-        return {message: assistantMessage, text: finalText};
+        return {message: assistantMessage, text: finalText, toolTrace};
     }
     throw new Error("passed safety step threshold --> possibly in infinite loop");
 }

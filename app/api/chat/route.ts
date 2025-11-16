@@ -12,21 +12,66 @@ export async function POST(request: NextRequest) {
     // Extract Canvas token from Authorization header
     const authHeader = request.headers.get('Authorization');
     const canvasToken = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
+      ? authHeader.slice(7) 
       : null;
 
-    // Log token presence for debugging
-    if (canvasToken) {
-      console.log('Canvas token provided for chat request');
-    } else {
-      console.log('No Canvas token provided - Canvas tools will not be available');
-    }
+    // Set up Server-Sent Events streaming
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
 
-    const result = await runWithTools(message, canvasToken);
-    
-    return Response.json({ 
-      text: result.text,
-      message: result.message 
+        const sendSSE = (data: object) => {
+          const message = `data: ${JSON.stringify(data)}\n\n`;
+          controller.enqueue(encoder.encode(message));
+        };
+
+        try {
+          await runWithTools(
+            message,
+            canvasToken,
+            (update) => {
+              // Send tool update via SSE
+              sendSSE({
+                type: 'tool',
+                step: update.step,
+                name: update.name,
+                status: update.status,
+                input: update.input,
+                output: update.output
+              });
+            }
+          ).then((result) => {
+            // Send final response
+            sendSSE({
+              type: 'final',
+              text: result.text,
+              message: result.message
+            });
+            controller.close();
+          }).catch((error) => {
+            // Send error response
+            sendSSE({
+              type: 'error',
+              error: error instanceof Error ? error.message : 'Failed to process chat'
+            });
+            controller.close();
+          });
+        } catch (error) {
+          sendSSE({
+            type: 'error',
+            error: error instanceof Error ? error.message : 'Failed to process chat'
+          });
+          controller.close();
+        }
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
 
   } catch (error) {
