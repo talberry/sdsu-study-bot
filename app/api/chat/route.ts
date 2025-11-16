@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
 
         try {
           await runWithTools(
-            message,
+            `User message: ${message}. 
+          Canvas context: course_id=${courseId ?? "unknown"}, token included.`,
             canvasToken,
             (update) => {
               // Send tool update via SSE

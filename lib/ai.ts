@@ -184,21 +184,28 @@ async function executeTool(call: ToolCall, canvasToken: string | null): Promise<
             }
         }
 
-        case "generate_study_pack": {
-            // This tool doesn't require Canvas authentication
-            const {content, material_type} = input;
-            if (!content || typeof content !== "string") {
-                throw new Error("content is required and must be a string");
+        case "generate_study_guide": {
+            const { course_id, token } = input as { course_id?: string; token?: string };
+            if (!course_id || !token)
+                throw new Error("Missing required inputs for study guide.");
+
+            // Call your existing Next.js backend route that builds the study pack
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/canvas/study-pack`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ courseId: course_id, token }),
+                }
+            );
+
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(`Study guide route failed: ${err}`);
             }
-            if (!material_type || typeof material_type !== "string") {
-                throw new Error("material_type is required and must be a string");
-            }
-            // For now, return a simple summary. This could be enhanced to use the LLM to generate study materials
-            return {
-                summary: `Study pack generated for ${material_type} material. Content length: ${content.length} characters.`,
-                content,
-                material_type
-            };
+
+            const data = await res.json();
+            return data;
         }
     }
 }

@@ -96,5 +96,18 @@ export const toolSchemas = [
                 }
             }
         }
+    },
+    {
+        name: "generate_study_guide",
+        description:
+            "Create a structured study guide from Canvas course content. Include title, key topics, what to review, and 3–5 practice prompts.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                course_id: { type: "string", description: "Canvas course ID" },
+                token: { type: "string", description: "Canvas API access token" },
+            },
+            required: ["course_id", "token"],
+        },
     }
 ]
