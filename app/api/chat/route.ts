@@ -11,45 +11,69 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    // Simple intent: if user asks for a study guide → call the study-pack route
-    const lower = message.toLowerCase();
-    const wantsStudyGuide =
-      lower.includes("study guide") ||
-      lower.includes("study pack") ||
-      lower.includes("make notes") ||
-      lower.includes("study notes");
+    // Extract Canvas token from Authorization header
+    const authHeader = request.headers.get('Authorization');
+    const canvasToken = authHeader?.startsWith('Bearer ') 
+      ? authHeader.slice(7) 
+      : null;
 
-    if (wantsStudyGuide) {
-      if (!token || !courseId) {
-        return Response.json(
-          { error: "To make a study guide, include courseId and token in the request body." },
-          { status: 400 }
-        );
+    // Set up Server-Sent Events streaming
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+
+        const sendSSE = (data: object) => {
+          const message = `data: ${JSON.stringify(data)}\n\n`;
+          controller.enqueue(encoder.encode(message));
+        };
+
+        try {
+          await runWithTools(
+            message,
+            canvasToken,
+            (update) => {
+              // Send tool update via SSE
+              sendSSE({
+                type: 'tool',
+                step: update.step,
+                name: update.name,
+                status: update.status,
+                input: update.input,
+                output: update.output
+              });
+            }
+          ).then((result) => {
+            // Send final response
+            sendSSE({
+              type: 'final',
+              text: result.text,
+              message: result.message
+            });
+            controller.close();
+          }).catch((error) => {
+            // Send error response
+            sendSSE({
+              type: 'error',
+              error: error instanceof Error ? error.message : 'Failed to process chat'
+            });
+            controller.close();
+          });
+        } catch (error) {
+          sendSSE({
+            type: 'error',
+            error: error instanceof Error ? error.message : 'Failed to process chat'
+          });
+          controller.close();
+        }
       }
+    });
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/canvas/study-pack`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseId, token }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        return Response.json({ error: data?.error ?? "Study-pack failed" }, { status: res.status });
-      }
-
-      return Response.json({
-        text: data.summary,
-        message: "Generated a study guide from your Canvas data.",
-      });
-    }
-
-    // Otherwise, normal Claude chat
-    const result = await runWithTools(message);
-    
-    return Response.json({ 
-      text: result.text,
-      message: result.message 
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
     });
 
   } catch (error) {
