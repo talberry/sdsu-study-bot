@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { canvasClient } from "@/lib/canvas"; 
-import { readParams } from "@/lib/query";    
+import { createCanvasClient, readParams } from "@/lib/canvas"; 
+import type { ModuleItem } from "@/types/canvas";    
 
 /**
  * handles GET requests for Canvas files
@@ -21,27 +21,37 @@ export async function GET(req: Request) {
   try {
     const { courseId, moduleId, fileId, moduleItemId, token } = readParams(req);  
     
-    // required params validation
-    if(!courseId || !token) {
+    // required params validation - fileId can work without courseId, but we need at least one
+    if(!token) {
       return NextResponse.json(
-        { error: "Missing required parameters; both course ID and Canvas personal access token are necessary." },
+        { error: "Missing required parameter: Canvas personal access token is necessary." },
         { status: 400 }
       );
     }
 
+    if(!courseId && !fileId) {
+      return NextResponse.json(
+        { error: "Missing required parameter: either courseId or fileId must be provided." },
+        { status: 400 }
+      );
+    }
+
+    // Create client instance with token
+    const client = createCanvasClient(token);
+
     // Fetch a specific file 
     if(fileId) {
-      const file = await canvasClient.getFiles(courseId, fileId, token);
+      const file = await client.getFiles(undefined, fileId);
       
-        if(!file) {
-          return NextResponse.json(
-          { error: "File with ID ${fileId} not found." },
+      if(!file) {
+        return NextResponse.json(
+          { error: `File with ID ${fileId} not found.` },
           { status: 404 }
         );
       }
 
       // Attach module context if provided
-      if (moduleItemId) {
+      if (moduleItemId && typeof file === 'object' && !Array.isArray(file)) {
         file.moduleItemId = moduleItemId;
       }
 
@@ -49,16 +59,19 @@ export async function GET(req: Request) {
     }
 
     // Fetch all files in a specific module
-    if (moduleId) {
-      const moduleItems = await canvasClient.getModuleItems(courseId, moduleId, token);
-
-      const files = moduleItems.filter(
-        (Item: any) => Item.type === "File"
+    if (moduleId && courseId) {
+      const moduleItems = await client.getModuleItems(courseId, moduleId);
+      
+      // Ensure moduleItems is an array
+      const itemsArray = Array.isArray(moduleItems) ? moduleItems : [moduleItems];
+      
+      const files = itemsArray.filter(
+        (item: ModuleItem) => item.type === "File"
       );
 
       if (!files.length) {
         return NextResponse.json(
-          { message: "No files found in module ${moduleId}." },
+          { message: `No files found in module ${moduleId}.` },
           { status: 200 }
         );
       }
@@ -67,23 +80,31 @@ export async function GET(req: Request) {
     }
 
     // otherwise fetch all course files
-    const files = await canvasClient.getFiles(courseId, token);
+    if (courseId) {
+      const files = await client.getFiles(courseId);
+      
+      // Ensure files is an array
+      const filesArray = Array.isArray(files) ? files : [files];
 
-    if(!files || files.length === 0) {
-      return NextResponse.json(
-        { message: "No files found for this course." },
-        { status: 200 }
-      );
+      if(!filesArray || filesArray.length === 0) {
+        return NextResponse.json(
+          { message: "No files found for this course." },
+          { status: 200 }
+        );
+      }
+      
+      return NextResponse.json({ files: filesArray });
     }
-    
-    return NextResponse.json({ files });
-  } catch(error: any) {
+
+    return NextResponse.json(
+      { error: "Invalid parameters." },
+      { status: 400 }
+    );
+  } catch(error: unknown) {
     console.error("Error fetching files:", error);
     return NextResponse.json(
-      { error: "Failed to fetch files.", details: error.message ?? "Unknown error."},
+      { error: "Failed to fetch files.", details: error instanceof Error ? error.message : "Unknown error."},
       { status: 500 }
     );
   }
-  
-  
 }

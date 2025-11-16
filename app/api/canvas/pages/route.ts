@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { canvasClient } from "@/lib/canvas"; 
-import { readParams } from "@/lib/query";    
+import { createCanvasClient, readParams } from "@/lib/canvas";
+import type { ModuleItem } from "@/types/canvas";
 
 /**
  * handles GET requests for Canvas pages
@@ -29,19 +29,22 @@ export async function GET(req: Request) {
       );
     }
 
+    // Create client instance with token
+    const client = createCanvasClient(token);
+
     // Fetch a specific page 
     if(pageId) {
-      const page = await canvasClient.getPages(courseId, pageId, token);
+      const page = await client.getPages(courseId, pageId);
       
-        if(!page) {
-          return NextResponse.json(
-          { error: "Page with ID ${pageId} not found." },
+      if(!page) {
+        return NextResponse.json(
+          { error: `Page with ID ${pageId} not found.` },
           { status: 404 }
         );
       }
 
       // Attach module context if provided
-      if (moduleItemId) {
+      if (moduleItemId && typeof page === 'object' && !Array.isArray(page)) {
         page.moduleItemId = moduleItemId;
       }
 
@@ -50,15 +53,18 @@ export async function GET(req: Request) {
 
     // Fetch all pages in a specific module
     if (moduleId) {
-      const moduleItems = await canvasClient.getModuleItems(courseId, moduleId, token);
-
-      const pages = moduleItems.filter(
-        (Item: any) => Item.type === "Page"
+      const moduleItems = await client.getModuleItems(courseId, moduleId);
+      
+      // Ensure moduleItems is an array
+      const itemsArray = Array.isArray(moduleItems) ? moduleItems : [moduleItems];
+      
+      const pages = itemsArray.filter(
+        (item: ModuleItem) => item.type === "Page"
       );
 
       if (!pages.length) {
         return NextResponse.json(
-          { message: "No pages found in module ${moduleId}." },
+          { message: `No pages found in module ${moduleId}.` },
           { status: 200 }
         );
       }
@@ -67,20 +73,23 @@ export async function GET(req: Request) {
     }
 
     // otherwise fetch all course pages
-    const pages = await canvasClient.getPages(courseId, token);
+    const pages = await client.getPages(courseId);
 
-    if(!pages || pages.length === 0) {
+    // Ensure pages is an array
+    const pagesArray = Array.isArray(pages) ? pages : [pages];
+    
+    if(!pagesArray || pagesArray.length === 0) {
       return NextResponse.json(
         { message: "No pages found for this course." },
         { status: 200 }
       );
     }
     
-    return NextResponse.json({ pages });
-  } catch(error: any) {
+    return NextResponse.json({ pages: pagesArray });
+  } catch(error: unknown) {
     console.error("Error fetching pages:", error);
     return NextResponse.json(
-      { error: "Failed to fetch pages.", details: error.message ?? "Unknown error."},
+      { error: "Failed to fetch pages.", details: error instanceof Error ? error.message : "Unknown error."},
       { status: 500 }
     );
   }
