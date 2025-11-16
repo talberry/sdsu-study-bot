@@ -39,6 +39,7 @@ export interface ModuleItem {
     content_id: number | null;
     html_url: string;
     external_url?: string;
+    page_url?: string;
 }
 
 export interface File { 

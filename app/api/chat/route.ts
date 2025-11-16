@@ -9,34 +9,61 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    // Create a streaming response
-    const encoder = new TextEncoder();
+    // Extract Canvas token from Authorization header
+    const authHeader = request.headers.get('Authorization');
+    const canvasToken = authHeader?.startsWith('Bearer ') 
+      ? authHeader.slice(7) 
+      : null;
+
+    // Set up Server-Sent Events streaming
     const stream = new ReadableStream({
       async start(controller) {
+        const encoder = new TextEncoder();
+
+        const sendSSE = (data: object) => {
+          const message = `data: ${JSON.stringify(data)}\n\n`;
+          controller.enqueue(encoder.encode(message));
+        };
+
         try {
-          const result = await runWithTools(message, (toolUpdate) => {
-            // Send tool execution updates in real-time
-            const data = `data: ${JSON.stringify({ type: 'tool', ...toolUpdate })}\n\n`;
-            controller.enqueue(encoder.encode(data));
+          await runWithTools(
+            message,
+            canvasToken,
+            (update) => {
+              // Send tool update via SSE
+              sendSSE({
+                type: 'tool',
+                step: update.step,
+                name: update.name,
+                status: update.status,
+                input: update.input,
+                output: update.output
+              });
+            }
+          ).then((result) => {
+            // Send final response
+            sendSSE({
+              type: 'final',
+              text: result.text,
+              message: result.message
+            });
+            controller.close();
+          }).catch((error) => {
+            // Send error response
+            sendSSE({
+              type: 'error',
+              error: error instanceof Error ? error.message : 'Failed to process chat'
+            });
+            controller.close();
           });
-          
-          // Send final result
-          const finalData = `data: ${JSON.stringify({ 
-            type: 'final', 
-            text: result.text,
-            toolTrace: result.toolTrace 
-          })}\n\n`;
-          controller.enqueue(encoder.encode(finalData));
-          controller.close();
         } catch (error) {
-          const errorData = `data: ${JSON.stringify({ 
-            type: 'error', 
-            error: error instanceof Error ? error.message : 'Failed to process chat' 
-          })}\n\n`;
-          controller.enqueue(encoder.encode(errorData));
+          sendSSE({
+            type: 'error',
+            error: error instanceof Error ? error.message : 'Failed to process chat'
+          });
           controller.close();
         }
-      },
+      }
     });
 
     return new Response(stream, {
