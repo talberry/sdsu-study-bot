@@ -68,8 +68,8 @@ export class CanvasClient {
         return this.request<Quiz[] | Quiz>(`/courses/${courseId}/quizzes${quizId ? `/${quizId}` : ''}?per_page=50`);
     }
     
-    async getPages(courseId: string, pageId?: string): Promise<Page[] | Page> {
-        return this.request<Page[] | Page>(`/courses/${courseId}/pages${pageId ? `/${pageId}` : ''}?per_page=30`);
+    async getPages(courseId: string, page_slug?: string): Promise<Page[] | Page> {
+        return this.request<Page[] | Page>(`/courses/${courseId}/pages${page_slug ? `/${page_slug}` : ''}?per_page=30`);
     }
     
     async getModuleItems(courseId: string, moduleId: string): Promise<ModuleItem[] | ModuleItem> {
