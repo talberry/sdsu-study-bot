@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { canvasClient } from "@/lib/canvas"; 
-import { readParams } from "@/lib/query";    
+import { createCanvasClient, readParams } from "@/lib/canvas";
 
 /**
  * handles GET requests for Canvas assignments
