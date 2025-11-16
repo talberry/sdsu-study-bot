@@ -9,7 +9,20 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    const result = await runWithTools(message);
+    // Extract Canvas token from Authorization header
+    const authHeader = request.headers.get('Authorization');
+    const canvasToken = authHeader?.startsWith('Bearer ') 
+      ? authHeader.substring(7) 
+      : null;
+
+    // Log token presence for debugging
+    if (canvasToken) {
+      console.log('Canvas token provided for chat request');
+    } else {
+      console.log('No Canvas token provided - Canvas tools will not be available');
+    }
+
+    const result = await runWithTools(message, canvasToken);
     
     return Response.json({ 
       text: result.text,
