@@ -104,9 +104,9 @@ export default function ChatInterface() {
   return (
     <div className="flex flex-col h-full bg-black">
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 chat-scrollbar">
         {!token && (
-          <div className="mx-auto mb-2 max-w-md bg-[#141414] border border-[#1f1f1f] p-3 text-center text-gray-400 text-xs font-semibold">
+          <div className="mx-auto mb-2 max-w-md bg-[#141414] border border-[#1f1f1f] p-3 text-center text-gray-400 text-xs font-semibold rounded-lg">
             No Canvas token linked — click "Link Canvas" above to add your
             token.
           </div>
@@ -119,7 +119,7 @@ export default function ChatInterface() {
             }`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-3 ${
+              className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
                 message.sender === "user"
                   ? "bg-[#8b2e2e] text-white border border-[#8b2e2e] shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)]"
                   : "bg-[#141414] border border-[#1f1f1f] text-white"
@@ -137,7 +137,7 @@ export default function ChatInterface() {
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-[#141414] border border-[#1f1f1f] text-white px-4 py-3">
+            <div className="bg-[#141414] border border-[#1f1f1f] text-white px-4 py-3 rounded-lg">
               <div className="flex space-x-2">
                 <div className="w-2 h-2 bg-[#8b2e2e] rounded-full animate-bounce"></div>
                 <div
@@ -165,12 +165,12 @@ export default function ChatInterface() {
             onKeyPress={handleKeyPress}
             placeholder="Enter your question"
             disabled={isLoading}
-            className="flex-1 px-3 py-2 text-sm bg-[#1f1f1f] border border-[#1f1f1f] text-white placeholder-gray-500 focus:outline-none focus:border-[#8b2e2e] disabled:opacity-50"
+            className="flex-1 px-3 py-4 text-base bg-[#1f1f1f] border border-[#1f1f1f] text-white placeholder-gray-500 focus:outline-none focus:border-[#8b2e2e] disabled:opacity-50 rounded-lg"
           />
           <button
             onClick={handleSendMessage}
             disabled={isLoading || !inputValue.trim()}
-            className="px-4 py-2 text-sm bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] border border-[#8b2e2e] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition-all duration-300"
+            className="px-4 py-2 text-sm bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] border border-[#8b2e2e] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition-all duration-300 rounded-lg"
           >
             Send
           </button>
