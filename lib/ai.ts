@@ -206,7 +206,7 @@ async function executeTool(call: ToolCall, canvasToken: string | null): Promise<
 type ToolUpdateCallback = (update: { step: number; name: string; status: 'started' | 'completed'; input?: Record<string, unknown>; output?: Record<string, unknown> }) => void;
 
 export async function runWithTools(userText: string, canvasToken?: string | null, onToolUpdate?: ToolUpdateCallback) {
-    const systemPrompt = "";
+    // const systemPrompt = SYSTEM_PROMPT;
     const conversation: Message[] = [
         {
             role: "user",
@@ -220,7 +220,7 @@ export async function runWithTools(userText: string, canvasToken?: string | null
     const toolTrace: ToolTraceEntry[] = [];
 
     for (let step = 0; step < safetySteps; step++) {
-        const response = await callConverse(conversation, systemPrompt);
+        const response = await callConverse(conversation, SYSTEM_PROMPT);
         const stopReason = response.stopReason;
         const assistantMessage = response.output?.message;
 
