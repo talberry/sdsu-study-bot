@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useCanvasTokenContext } from "./CanvasTokenProvider";
+import MessageContent from "./MessageContent";
 
 interface Message {
   id: string;
@@ -112,14 +113,19 @@ export default function ChatInterface() {
                   setMessages((prev) => [...prev, botMessage]);
                   setCurrentTools([]);
                 } else if (data.type === "error") {
+                  // Show the actual error message if available, otherwise show generic message
+                  const errorText = data.error 
+                    ? `Error: ${data.error}` 
+                    : "Sorry, I encountered an error. Please try again.";
                   const errorMessage: Message = {
                     id: (Date.now() + 1).toString(),
-                    text: "Sorry, I encountered an error. Please try again.",
+                    text: errorText,
                     sender: "bot",
                     timestamp: new Date(),
                   };
                   setMessages((prev) => [...prev, errorMessage]);
                   setCurrentTools([]);
+                  console.error("Chat error:", data.error, data.details);
                 }
               } catch (e) {
                 console.error("Error parsing SSE data:", e);
@@ -184,14 +190,18 @@ export default function ChatInterface() {
             }`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+              className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
                 message.sender === "user"
                   ? "bg-[#8b2e2e] text-white border border-[#8b2e2e] shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)]"
                   : "bg-[#141414] border border-[#1f1f1f] text-white"
               }`}
             >
-              <p className="text-sm">{message.text}</p>
-              <span className="text-xs opacity-70 mt-1 block font-semibold">
+              {message.sender === "bot" ? (
+                <MessageContent text={message.text} />
+              ) : (
+                <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+              )}
+              <span className="text-xs opacity-70 mt-2 block font-semibold">
                 {message.timestamp.toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
