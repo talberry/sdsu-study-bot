@@ -49,19 +49,19 @@ export default function CanvasAuthModal({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Paste your Canvas auth token"
-          className="w-full px-4 py-2 bg-[#1f1f1f] border border-[#1f1f1f] text-white placeholder-gray-500 focus:outline-none focus:border-[#8b2e2e] mb-6"
+          className="w-full px-4 py-2 bg-[#1f1f1f] border border-[#1f1f1f] text-white placeholder-gray-500 focus:outline-none focus:border-[#8b2e2e] mb-6 rounded-lg"
         />
 
         <div className="flex gap-4">
           <button
             onClick={handleCancel}
-            className="flex-1 px-4 py-2 border border-[#1f1f1f] text-gray-400 hover:bg-[#141414] transition font-semibold"
+            className="flex-1 px-4 py-2 border border-[#1f1f1f] text-gray-400 hover:bg-[#141414] transition font-semibold rounded-lg"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="flex-1 px-4 py-2 bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] border border-[#8b2e2e] text-white font-semibold transition-all duration-300"
+            className="flex-1 px-4 py-2 bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] border border-[#8b2e2e] text-white font-semibold transition-all duration-300 rounded-lg"
           >
             Submit
           </button>

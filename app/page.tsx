@@ -37,9 +37,7 @@ export default function Home() {
       {/* Navigation */}
       <nav className="fixed w-full top-0 z-50 bg-black border-b border-[#1f1f1f]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="text-2xl text-white tracking-widest font-bold">
-            SDSU StudyBot
-          </div>
+          <div className="text-2xl text-white font-bold">SDSU StudyBot</div>
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
@@ -61,7 +59,7 @@ export default function Home() {
             >
               Contact
             </a>
-            <button className="bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-6 py-2 border border-[#8b2e2e] text-white font-semibold transition-all duration-300">
+            <button className="bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-6 py-2 border border-[#8b2e2e] text-white font-semibold transition-all duration-300 rounded-lg">
               Get Started
             </button>
           </div>
@@ -96,41 +94,67 @@ export default function Home() {
             >
               Contact
             </a>
-            <button className="w-full bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-6 py-2 border border-[#8b2e2e] text-white font-semibold transition-all duration-300">
+            <button className="w-full bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-6 py-2 border border-[#8b2e2e] text-white font-semibold transition-all duration-300 rounded-lg">
               Get Started
             </button>
           </div>
         )}
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section - Full screen title with gradient fade */}
       <section
-        className="pt-32 pb-20 px-6 relative"
+        className="h-screen pt-28 px-6 relative flex items-center justify-center text-center"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 46, 46, 0.2), transparent)",
+            "linear-gradient(to bottom, rgba(139, 46, 46, 0.8) 0%, rgba(139, 46, 46, 0.4) 50%, rgba(0, 0, 0, 1) 100%)",
         }}
       >
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-6xl md:text-8xl mb-6 leading-tight text-white tracking-tighter font-bold">
-            Study<span className="text-[#8b2e2e] block">Bot</span>
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-6xl md:text-8xl leading-tight text-white tracking-tighter font-bold">
+            <span className="block">SDSU</span>
+            <span className="block text-white">Canvas Study Bot</span>
           </h1>
 
-          <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto font-semibold">
-            Start by linking your Canvas auth token below
+          {/* Scroll hint */}
+          <a
+            href="#link"
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-gray-400 hover:text-white transition text-4xl"
+            aria-label="Scroll to link section"
+          >
+            ↓
+          </a>
+        </div>
+      </section>
+
+      {/* Link Canvas Section */}
+      <section id="link" className="py-24 px-6 bg-black">
+        <div className="max-w-6xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Link your Canvas token
+          </h2>
+          <p className="text-gray-400 mb-10 max-w-2xl mx-auto">
+            Start by linking your Canvas authentication token to personalize
+            your study experience.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => setIsCanvasModalOpen(true)}
-              className="bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-8 py-4 border border-[#8b2e2e] text-white font-semibold text-lg transition-all duration-300"
+              className="bg-[#8b2e2e] hover:shadow-[0_0_20px_rgba(139,46,46,0.5),0_0_40px_rgba(139,46,46,0.3)] px-8 py-4 border border-[#8b2e2e] text-white font-semibold text-lg transition-all duration-300 rounded-lg"
             >
               Link Canvas
             </button>
           </div>
+        </div>
+      </section>
 
-          {/* Chat Interface Box */}
-          <div className="relative w-full max-w-4xl mx-auto h-[500px] bg-[#080808] border border-[#1f1f1f] shadow-[0_4px_24px_rgba(0,0,0,0.8)] overflow-hidden">
+      {/* Chat Section */}
+      <section id="chat" className="py-24 px-6 bg-black">
+        <div className="max-w-6xl mx-auto">
+          <h3 className="text-2xl font-semibold mb-4 text-center">
+            Chat with your Study Bot
+          </h3>
+          <div className="relative w-full max-w-4xl mx-auto h-[500px] overflow-hidden">
             <ChatInterface />
           </div>
         </div>
