@@ -65,7 +65,7 @@ export default function ChatInterface() {
         const data = await response.json();
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: data.reply || "I'm not sure how to respond to that.",
+          text: data.text || "I'm not sure how to respond to that.",
           sender: "bot",
           timestamp: new Date(),
         };
@@ -107,7 +107,7 @@ export default function ChatInterface() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 chat-scrollbar">
         {!token && (
           <div className="mx-auto mb-2 max-w-md bg-[#141414] border border-[#1f1f1f] p-3 text-center text-gray-400 text-xs font-semibold rounded-lg">
-            No Canvas token linked — click "Link Canvas" above to add your
+            No Canvas token linked — click {"Link Canvas"} above to add your
             token.
           </div>
         )}

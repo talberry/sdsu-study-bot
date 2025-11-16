@@ -140,7 +140,7 @@ export async function runWithTools(userText: string) {
             }
             continue;
         }
-        const textBlock = assistantMessage.content?.find((block: ContentBlock) => block.text);
+        const textBlock = assistantMessage.content?.find((block) => "text" in block && block.text);
         const finalText = textBlock?.text ?? "";
         return {message: assistantMessage, text: finalText};
     }
